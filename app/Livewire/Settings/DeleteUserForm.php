@@ -2,28 +2,15 @@
 
 namespace App\Livewire\Settings;
 
-use App\Concerns\PasswordValidationRules;
-use App\Livewire\Actions\Logout;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class DeleteUserForm extends Component
 {
-    use PasswordValidationRules;
-
-    public string $password = '';
-
     /**
-     * Delete the currently authenticated user.
+     * Block the legacy destructive endpoint until lifecycle cancellation is integrated.
      */
-    public function deleteUser(Logout $logout): void
+    public function deleteUser(): never
     {
-        $this->validate([
-            'password' => $this->currentPasswordRules(),
-        ]);
-
-        tap(Auth::user(), $logout(...))->delete();
-
-        $this->redirect('/', navigate: true);
+        abort(403, __('Account deletion is unavailable through this portal.'));
     }
 }

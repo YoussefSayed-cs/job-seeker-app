@@ -3,7 +3,7 @@
 
     <flux:heading level="2" class="sr-only">{{ __('Profile settings') }}</flux:heading>
 
-    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your full name and email address')">
+    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your full name, email address, and phone number')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
             <flux:input wire:model="full_name" :label="__('Full name')" type="text" required autofocus autocomplete="name" />
 
@@ -23,6 +23,8 @@
                     </div>
                 @endif
             </div>
+
+            <flux:input wire:model="phone" :label="__('Phone number')" type="tel" required autocomplete="tel" />
 
             <div class="flex items-center gap-4">
                 <flux:button variant="primary" type="submit">{{ __('Save') }}</flux:button>

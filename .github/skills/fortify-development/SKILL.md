@@ -43,7 +43,7 @@ Enable in `config/fortify.php` features array:
 ```
 - [ ] Add TwoFactorAuthenticatable trait to User model
 - [ ] Enable feature in config/fortify.php
-- [ ] If the `*_add_two_factor_columns_to_users_table.php` migration is missing, publish via `php artisan vendor:publish --tag=fortify-migrations` and migrate
+- [ ] Coordinate any required schema change with `job-management`; Job Seeker must not publish or execute migrations
 - [ ] Set up view callbacks in FortifyServiceProvider
 - [ ] Create 2FA management UI
 - [ ] Test QR code and recovery codes
@@ -56,7 +56,7 @@ Enable in `config/fortify.php` features array:
 ```
 - [ ] Add PasskeyAuthenticatable trait to User model and implement PasskeyUser
 - [ ] Enable passkeys feature in config/fortify.php
-- [ ] If the passkeys table migration is missing, publish via `php artisan vendor:publish --tag=fortify-migrations` and migrate
+- [ ] Coordinate any required schema change with `job-management`; Job Seeker must not publish or execute migrations
 - [ ] Configure passkeys relying_party_id, allowed_origins, user_handle_secret, and timeout if defaults are not suitable
 - [ ] Build UI with @laravel/passkeys for registration, login, confirmation, and deletion
 ```

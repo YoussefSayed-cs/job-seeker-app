@@ -2,6 +2,8 @@
 
 use App\Livewire\Settings\Profile;
 use Livewire\Livewire;
+use Shagalni\Shared\Enums\AccountStatus;
+use Shagalni\Shared\Enums\UserRole;
 use Shagalni\Shared\Models\User;
 
 test('profile page is displayed', function () {
@@ -18,6 +20,7 @@ test('profile information can be updated', function () {
     $response = Livewire::test(Profile::class)
         ->set('full_name', 'Test User')
         ->set('email', 'test@example.com')
+        ->set('phone', '01098765432')
         ->call('updateProfileInformation');
 
     $response->assertHasNoErrors();
@@ -26,6 +29,7 @@ test('profile information can be updated', function () {
 
     expect($user->full_name)->toEqual('Test User');
     expect($user->email)->toEqual('test@example.com');
+    expect($user->phone)->toEqual('01098765432');
     expect($user->email_verified_at)->toBeNull();
 });
 
@@ -37,6 +41,7 @@ test('email is stored in lowercase so the user can still log in', function () {
     Livewire::test(Profile::class)
         ->set('full_name', 'Test User')
         ->set('email', 'Test@Example.com')
+        ->set('phone', $user->phone)
         ->call('updateProfileInformation')
         ->assertHasNoErrors();
 
@@ -55,11 +60,13 @@ test('email is stored in lowercase so the user can still log in', function () {
 test('email must be unique regardless of case', function () {
     User::factory()->create(['email' => 'taken@example.com']);
 
-    $this->actingAs(User::factory()->create());
+    $user = User::factory()->create();
+    $this->actingAs($user);
 
     Livewire::test(Profile::class)
         ->set('full_name', 'Test User')
         ->set('email', 'Taken@Example.com')
+        ->set('phone', $user->phone)
         ->call('updateProfileInformation')
         ->assertHasErrors(['email']);
 });
@@ -72,6 +79,7 @@ test('email verification status is unchanged when email address is unchanged', f
     $response = Livewire::test(Profile::class)
         ->set('full_name', 'Test User')
         ->set('email', $user->email)
+        ->set('phone', $user->phone)
         ->call('updateProfileInformation');
 
     $response->assertHasNoErrors();
@@ -79,33 +87,49 @@ test('email verification status is unchanged when email address is unchanged', f
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
 
-test('user can delete their account', function () {
+test('profile updates reject invalid phone numbers without changing the saved number', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user);
 
-    $response = Livewire::test('settings.delete-user-form')
-        ->set('password', 'password')
-        ->call('deleteUser');
+    Livewire::test(Profile::class)
+        ->set('full_name', $user->full_name)
+        ->set('email', $user->email)
+        ->set('phone', str_repeat('1', 21))
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['phone']);
 
-    $response
-        ->assertHasNoErrors()
-        ->assertRedirect('/');
-
-    expect($user->fresh())->toBeNull();
-    expect(auth()->check())->toBeFalse();
+    expect($user->fresh()->phone)->toBe($user->phone);
 });
 
-test('correct password must be provided to delete account', function () {
+test('profile updates cannot change protected account fields', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    Livewire::test(Profile::class)
+        ->set('full_name', 'Updated Name')
+        ->set('email', $user->email)
+        ->set('phone', $user->phone)
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    $updatedUser = $user->fresh();
+
+    expect($updatedUser->role)->toBe(UserRole::JobSeeker)
+        ->and($updatedUser->status)->toBe(AccountStatus::Active)
+        ->and($updatedUser->deletion_requested_at)->toBeNull()
+        ->and($updatedUser->anonymized_at)->toBeNull();
+});
+
+test('account deletion endpoint is disabled and never deletes the user', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user);
 
-    $response = Livewire::test('settings.delete-user-form')
-        ->set('password', 'wrong-password')
-        ->call('deleteUser');
+    Livewire::test('settings.delete-user-form')
+        ->call('deleteUser')
+        ->assertForbidden();
 
-    $response->assertHasErrors(['password']);
-
-    expect($user->fresh())->not->toBeNull();
+    expect($user->fresh())->not->toBeNull()
+        ->and(auth()->check())->toBeTrue();
 });
