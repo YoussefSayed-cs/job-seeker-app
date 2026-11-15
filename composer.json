@@ -11,7 +11,12 @@
     "repositories": [
         {
             "type": "path",
-            "url": "../shagalni-shared"
+            "url": "../shagalni-shared",
+            "options": {
+                "versions": {
+                    "shagalni/shared": "1.0.0"
+                }
+            }
         }
     ],
     "require": {
@@ -23,7 +28,7 @@
         "livewire/blaze": "^1.0",
         "livewire/flux": "^2.13.1",
         "livewire/livewire": "^4.1",
-        "shagalni/shared": "*"
+        "shagalni/shared": "^1.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",
@@ -55,7 +60,6 @@
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
-            "@php artisan migrate --force",
             "npm install",
             "npm run build"
         ],
@@ -96,7 +100,7 @@
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
+            "@php artisan config:clear --ansi"
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
@@ -119,6 +123,5 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "dev",
     "prefer-stable": true
 }
