@@ -102,6 +102,22 @@ test('profile updates reject invalid phone numbers without changing the saved nu
     expect($user->fresh()->phone)->toBe($user->phone);
 });
 
+test('profile updates allow a phone number shared with another account', function () {
+    User::factory()->create(['phone' => '01011112222']);
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Livewire::test(Profile::class)
+        ->set('full_name', $user->full_name)
+        ->set('email', $user->email)
+        ->set('phone', '01011112222')
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    expect($user->fresh()->phone)->toBe('01011112222');
+});
+
 test('profile updates cannot change protected account fields', function () {
     $user = User::factory()->create();
     $this->actingAs($user);

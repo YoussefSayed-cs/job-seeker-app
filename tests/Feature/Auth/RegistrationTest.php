@@ -49,3 +49,17 @@ test('phone is required for registration', function () {
         'password_confirmation' => 'password',
     ])->assertSessionHasErrors(['phone']);
 });
+
+test('users can register with a phone number already used by another account', function () {
+    User::factory()->create(['phone' => '01012345678']);
+
+    $this->post(route('register.store'), [
+        'full_name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+        'phone' => '01012345678',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertSessionHasNoErrors();
+
+    expect(User::where('email', 'jane@example.com')->value('phone'))->toBe('01012345678');
+});
