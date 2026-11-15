@@ -16,7 +16,7 @@ test('profile information can be updated', function () {
     $this->actingAs($user);
 
     $response = Livewire::test(Profile::class)
-        ->set('name', 'Test User')
+        ->set('full_name', 'Test User')
         ->set('email', 'test@example.com')
         ->call('updateProfileInformation');
 
@@ -24,7 +24,7 @@ test('profile information can be updated', function () {
 
     $user->refresh();
 
-    expect($user->name)->toEqual('Test User');
+    expect($user->full_name)->toEqual('Test User');
     expect($user->email)->toEqual('test@example.com');
     expect($user->email_verified_at)->toBeNull();
 });
@@ -35,7 +35,7 @@ test('email is stored in lowercase so the user can still log in', function () {
     $this->actingAs($user);
 
     Livewire::test(Profile::class)
-        ->set('name', 'Test User')
+        ->set('full_name', 'Test User')
         ->set('email', 'Test@Example.com')
         ->call('updateProfileInformation')
         ->assertHasNoErrors();
@@ -58,7 +58,7 @@ test('email must be unique regardless of case', function () {
     $this->actingAs(User::factory()->create());
 
     Livewire::test(Profile::class)
-        ->set('name', 'Test User')
+        ->set('full_name', 'Test User')
         ->set('email', 'Taken@Example.com')
         ->call('updateProfileInformation')
         ->assertHasErrors(['email']);
@@ -70,7 +70,7 @@ test('email verification status is unchanged when email address is unchanged', f
     $this->actingAs($user);
 
     $response = Livewire::test(Profile::class)
-        ->set('name', 'Test User')
+        ->set('full_name', 'Test User')
         ->set('email', $user->email)
         ->call('updateProfileInformation');
 

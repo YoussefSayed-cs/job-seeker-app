@@ -14,20 +14,20 @@ trait ProfileValidationRules
      *
      * @return array<string, array<int, Unique|ValidationRule|array<mixed>|string>>
      */
-    protected function profileRules(?int $userId = null): array
+    protected function profileRules(?string $userId = null): array
     {
         return [
-            'name' => $this->nameRules(),
+            'full_name' => $this->fullNameRules(),
             'email' => $this->emailRules($userId),
         ];
     }
 
     /**
-     * Get the validation rules used to validate user names.
+     * Get the validation rules used to validate user full names.
      *
      * @return array<int, Unique|ValidationRule|array<mixed>|string>
      */
-    protected function nameRules(): array
+    protected function fullNameRules(): array
     {
         return ['required', 'string', 'max:255'];
     }
@@ -37,7 +37,7 @@ trait ProfileValidationRules
      *
      * @return array<int, Unique|ValidationRule|array<mixed>|string>
      */
-    protected function emailRules(?int $userId = null): array
+    protected function emailRules(?string $userId = null): array
     {
         return [
             'required',
