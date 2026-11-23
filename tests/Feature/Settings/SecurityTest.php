@@ -3,6 +3,8 @@
 use App\Livewire\Settings\Security;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
+use Shagalni\Shared\Enums\AccountStatus;
+use Shagalni\Shared\Enums\UserRole;
 use Shagalni\Shared\Models\User;
 
 beforeEach(function () {});
@@ -31,7 +33,7 @@ test('security settings page renders without two factor when feature is disabled
 });
 
 test('password can be updated', function () {
-    $user = User::factory()->create([
+    $user = User::factory()->unverified()->create([
         'password' => Hash::make('password'),
     ]);
 
@@ -43,9 +45,17 @@ test('password can be updated', function () {
         ->set('password_confirmation', 'new-password')
         ->call('updatePassword');
 
-    $response->assertHasNoErrors();
+    $response->assertHasNoErrors()
+        ->assertSet('current_password', '')
+        ->assertSet('password', '')
+        ->assertSet('password_confirmation', '');
 
-    expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
+    $user->refresh();
+
+    expect(Hash::check('new-password', $user->password))->toBeTrue()
+        ->and($user->role)->toBe(UserRole::JobSeeker)
+        ->and($user->status)->toBe(AccountStatus::Active)
+        ->and($user->email_verified_at)->toBeNull();
 });
 
 test('correct password must be provided to update password', function () {

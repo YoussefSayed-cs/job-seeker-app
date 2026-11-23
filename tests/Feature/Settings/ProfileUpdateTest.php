@@ -2,7 +2,9 @@
 
 use App\Livewire\Settings\Profile;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 use Shagalni\Shared\Enums\AccountStatus;
@@ -34,6 +36,72 @@ test('profile information can be updated', function () {
     expect($user->email)->toEqual('test@example.com');
     expect($user->phone)->toEqual('01098765432');
     expect($user->email_verified_at)->toBeNull();
+});
+
+test('profile picture can be uploaded and replaced', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Livewire::test(Profile::class)
+        ->set('profilePicture', UploadedFile::fake()->image('first.jpg'))
+        ->call('updateProfilePicture')
+        ->assertHasNoErrors();
+
+    $first = $user->refresh()->profile_picture;
+
+    expect($first)->not->toBeNull();
+    Storage::disk('public')->assertExists($first);
+
+    Livewire::test(Profile::class)
+        ->set('profilePicture', UploadedFile::fake()->image('second.png'))
+        ->call('updateProfilePicture')
+        ->assertHasNoErrors();
+
+    $second = $user->refresh()->profile_picture;
+
+    expect($second)->not->toBe($first);
+    Storage::disk('public')->assertExists($second);
+    Storage::disk('public')->assertMissing($first);
+});
+
+test('profile picture rejects invalid file types and files over the size limit', function () {
+    Storage::fake('public');
+
+    $this->actingAs(User::factory()->create());
+
+    Livewire::test(Profile::class)
+        ->set('profilePicture', UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf'))
+        ->call('updateProfilePicture')
+        ->assertHasErrors(['profilePicture']);
+
+    Livewire::test(Profile::class)
+        ->set('profilePicture', UploadedFile::fake()->image('too-large.jpg')->size(2049))
+        ->call('updateProfilePicture')
+        ->assertHasErrors(['profilePicture']);
+});
+
+test('profile picture can be removed', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Livewire::test(Profile::class)
+        ->set('profilePicture', UploadedFile::fake()->image('avatar.jpg'))
+        ->call('updateProfilePicture');
+
+    $path = $user->refresh()->profile_picture;
+
+    Livewire::test(Profile::class)
+        ->call('removeProfilePicture')
+        ->assertHasNoErrors();
+
+    expect($user->refresh()->profile_picture)->toBeNull();
+    Storage::disk('public')->assertMissing($path);
 });
 
 test('changing email sends a verification link to the new address', function () {
