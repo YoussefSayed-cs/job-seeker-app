@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\AccountReactivationController;
 use App\Http\Controllers\CompanyOwnerRegistrationController;
+use App\Http\Controllers\RejectedCompanyRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -30,6 +31,13 @@ Route::get('/account-deletion/{user}/cancel', [AccountDeletionController::class,
 
 Route::middleware(['auth'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
+
+    Route::get('/company-registration/rejected', [RejectedCompanyRegistrationController::class, 'show'])
+        ->name('company-registration.rejected.show');
+
+    Route::patch('/company-registration/rejected', [RejectedCompanyRegistrationController::class, 'update'])
+        ->middleware('throttle:5,1')
+        ->name('company-registration.rejected.update');
 });
 
 require __DIR__.'/settings.php';
