@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\AccountReactivationController;
 use App\Http\Controllers\CompanyOwnerRegistrationController;
 use App\Http\Controllers\CompanyProfileController;
+use App\Http\Controllers\JobSearchController;
 use App\Http\Controllers\RejectedCompanyRegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,9 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/company-profile', [CompanyProfileController::class, 'update'])
         ->middleware('throttle:10,1')
         ->name('company-profile.update');
+
+    Route::get('/jobs/search', [JobSearchController::class, 'index'])
+        ->name('jobs.search');
 });
 
 require __DIR__.'/settings.php';
