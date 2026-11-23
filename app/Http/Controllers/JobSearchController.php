@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\JobSearchRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use Shagalni\Shared\Models\JobVacancy;
 
 class JobSearchController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(JobSearchRequest $request): JsonResponse
     {
         Gate::authorize('viewAny', JobVacancy::class);
 
         $paginator = JobVacancy::query()
             ->publiclyVisible()
+            ->searchFilters($request->validated())
             ->with([
                 'company:id,name,logo',
                 'category:id,name',

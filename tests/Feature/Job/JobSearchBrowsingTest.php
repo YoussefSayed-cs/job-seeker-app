@@ -270,3 +270,228 @@ test('listing is ordered newest first with stable secondary ordering', function 
         ->getJson(route('jobs.search'))
         ->assertJsonPath('data.0.title', 'Newer Job');
 });
+
+test('job title search supports partial matching and empty input', function () {
+    $owner = browsingOwner();
+    browsingJob($owner, ['title' => 'Senior Laravel Engineer']);
+    browsingJob($owner, ['title' => 'Product Designer']);
+
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['title' => 'Laravel']))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.title', 'Senior Laravel Engineer');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['title' => 'Missing']))
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['title' => '']))
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+});
+
+test('valid category filter returns matching jobs and excludes others', function () {
+    $owner = browsingOwner();
+    $software = JobCategory::firstOrCreate(['name' => 'Software']);
+    $design = JobCategory::firstOrCreate(['name' => 'Design']);
+
+    browsingJob($owner, [
+        'title' => 'Software Job',
+        'job_category_id' => $software->id,
+    ]);
+    browsingJob($owner, [
+        'title' => 'Design Job',
+        'job_category_id' => $design->id,
+    ]);
+
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['job_category_id' => $software->id]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.title', 'Software Job');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['job_category_id' => '']))
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+});
+
+test('invalid category identifiers and non-existent category ids are rejected', function () {
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['job_category_id' => 'invalid-category']))
+        ->assertUnprocessable();
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', [
+            'job_category_id' => '00000000-0000-4000-8000-000000000001',
+        ]))
+        ->assertUnprocessable();
+});
+
+test('location filter supports partial matching and empty input', function () {
+    $owner = browsingOwner();
+    browsingJob($owner, [
+        'title' => 'Cairo Job',
+        'location' => 'Cairo',
+    ]);
+    browsingJob($owner, [
+        'title' => 'Alexandria Job',
+        'location' => 'Alexandria',
+    ]);
+
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['location' => 'air']))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.location', 'Cairo');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['location' => 'Giza']))
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', ['location' => '']))
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+});
+
+test('combined title category and location filters use and logic', function () {
+    $owner = browsingOwner();
+    $software = JobCategory::firstOrCreate(['name' => 'Software']);
+    $design = JobCategory::firstOrCreate(['name' => 'Design']);
+
+    browsingJob($owner, [
+        'title' => 'Senior Laravel Engineer',
+        'location' => 'Cairo',
+        'job_category_id' => $software->id,
+    ]);
+    browsingJob($owner, [
+        'title' => 'Laravel Designer',
+        'location' => 'Alexandria',
+        'job_category_id' => $design->id,
+    ]);
+    browsingJob($owner, [
+        'title' => 'Laravel Engineer',
+        'location' => 'Cairo',
+        'job_category_id' => $design->id,
+    ]);
+
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', [
+            'title' => 'Laravel',
+            'job_category_id' => $software->id,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', [
+            'title' => 'Laravel',
+            'location' => 'Cairo',
+        ]))
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', [
+            'job_category_id' => $software->id,
+            'location' => 'Cairo',
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', [
+            'title' => 'Senior',
+            'job_category_id' => $software->id,
+            'location' => 'Cairo',
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.title', 'Senior Laravel Engineer');
+});
+
+test('filters cannot expose hidden or ineligible jobs', function () {
+    $owner = browsingOwner();
+    browsingJob($owner, [
+        'title' => 'Visible Laravel Job',
+        'location' => 'Cairo',
+    ]);
+
+    browsingJob($owner, [
+        'title' => 'Closed Laravel Job',
+        'location' => 'Cairo',
+        'status' => JobStatus::Closed,
+    ]);
+    browsingJob($owner, [
+        'title' => 'Expired Laravel Job',
+        'location' => 'Cairo',
+        'application_deadline' => now()->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs(User::factory()->create(['role' => UserRole::JobSeeker]))
+        ->getJson(route('jobs.search', [
+            'title' => 'Laravel',
+            'location' => 'Cairo',
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.title', 'Visible Laravel Job');
+});
+
+test('filtered pagination preserves search query parameters', function () {
+    $owner = browsingOwner();
+    $software = JobCategory::firstOrCreate(['name' => 'Software']);
+
+    for ($index = 0; $index < 12; $index++) {
+        browsingJob($owner, [
+            'title' => 'Laravel Engineer '.$index,
+            'location' => 'Cairo',
+            'job_category_id' => $software->id,
+        ]);
+    }
+
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+    $query = [
+        'title' => 'Laravel',
+        'job_category_id' => $software->id,
+        'location' => 'Cairo',
+    ];
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', $query))
+        ->assertOk()
+        ->assertJsonCount(10, 'data')
+        ->assertJsonPath('per_page', 10)
+        ->assertJsonPath('total', 12);
+
+    $firstPage = $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', $query))
+        ->assertOk()
+        ->json();
+
+    expect($firstPage['next_page_url'])
+        ->toContain('title=Laravel')
+        ->toContain('job_category_id='.$software->id)
+        ->toContain('location=Cairo');
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('jobs.search', [...$query, 'page' => 2]))
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('current_page', 2);
+});
