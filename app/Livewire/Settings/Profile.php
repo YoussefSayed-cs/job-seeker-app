@@ -61,24 +61,6 @@ class Profile extends Component
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
 
-    /**
-     * Send an email verification notification to the current user.
-     */
-    public function resendVerificationNotification(): void
-    {
-        $user = Auth::user();
-
-        if ($user->hasVerifiedEmail()) {
-            $this->redirectIntended(default: route('dashboard', absolute: false));
-
-            return;
-        }
-
-        $user->sendEmailVerificationNotification();
-
-        Flux::toast(text: __('A new verification link has been sent to your email address.'));
-    }
-
     #[Computed]
     public function hasUnverifiedEmail(): bool
     {

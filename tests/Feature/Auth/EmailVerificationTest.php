@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Laravel\Fortify\Features;
 use Shagalni\Shared\Models\User;
@@ -24,6 +26,22 @@ test('unverified users can access authenticated pages that do not require verifi
     $response = $this->actingAs($user)->get(route('appearance.edit'));
 
     $response->assertOk();
+});
+
+test('unverified users can request another verification link', function () {
+    Notification::fake();
+
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertSee(route('verification.send'));
+
+    $this->post(route('verification.send'))
+        ->assertSessionHas('status', 'verification-link-sent');
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 test('email can be verified', function () {

@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 use Shagalni\Shared\Enums\AccountStatus;
 use Shagalni\Shared\Enums\UserRole;
@@ -17,6 +19,8 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+    Notification::fake();
+
     $response = $this->post(route('register.store'), [
         'full_name' => 'John Doe',
         'email' => 'test@example.com',
@@ -39,6 +43,8 @@ test('new users can register', function () {
         ->and($user->status)->toBe(AccountStatus::Active)
         ->and($user->email_verified_at)->toBeNull()
         ->and(Hash::check('password', $user->password))->toBeTrue();
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 test('phone is required for registration', function () {

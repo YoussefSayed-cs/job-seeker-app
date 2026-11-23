@@ -3,6 +3,7 @@
 use App\Livewire\Settings\Profile;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 use Shagalni\Shared\Enums\AccountStatus;
 use Shagalni\Shared\Enums\UserRole;
@@ -51,7 +52,38 @@ test('changing email sends a verification link to the new address', function () 
 
     expect($user->fresh()->email_verified_at)->toBeNull();
 
-    Notification::assertSentTo($user, VerifyEmail::class);
+    Notification::assertSentTo($user, VerifyEmail::class, function (VerifyEmail $notification) use ($user): bool {
+        $url = $notification->toMail($user)->actionUrl;
+
+        return str_ends_with(
+            (string) parse_url($url, PHP_URL_PATH),
+            '/'.sha1('updated@example.com'),
+        );
+    });
+});
+
+test('verification link for the previous email is invalid after an email change', function () {
+    $user = User::factory()->create();
+    $previousEmail = $user->email;
+    $oldVerificationUrl = URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addMinutes(60),
+        ['id' => $user->id, 'hash' => sha1($previousEmail)],
+    );
+
+    $this->actingAs($user);
+
+    Livewire::test(Profile::class)
+        ->set('full_name', $user->full_name)
+        ->set('email', 'updated@example.com')
+        ->set('phone', $user->phone)
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    $this->get($oldVerificationUrl)->assertForbidden();
+
+    expect($user->fresh()->email)->toBe('updated@example.com')
+        ->and($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
 
 test('email is stored in lowercase so the user can still log in', function () {
