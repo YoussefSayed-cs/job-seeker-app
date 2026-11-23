@@ -1,5 +1,5 @@
 php_version: "8.5"
-node_version: '22s '
+node_version: "26"
 framework: laravel
 framework_version: "13"
 secured: true
@@ -7,3 +7,6 @@ services:
   - mailpit
   - mysql
   - redis
+workers:
+  - queue
+  - schedule
