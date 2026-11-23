@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\JobSearchRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
+use Shagalni\Shared\Models\JobCategory;
 use Shagalni\Shared\Models\JobVacancy;
 
 class JobSearchController extends Controller
 {
-    public function index(JobSearchRequest $request): JsonResponse
+    public function index(JobSearchRequest $request): JsonResponse|View
     {
         Gate::authorize('viewAny', JobVacancy::class);
 
@@ -24,6 +26,18 @@ class JobSearchController extends Controller
             ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
+
+        if (! $request->expectsJson()) {
+            $categories = JobCategory::query()
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
+            return view('jobs.index', [
+                'jobs' => $paginator,
+                'categories' => $categories,
+                'filters' => $request->validated(),
+            ]);
+        }
 
         $paginator->getCollection()->transform(fn (JobVacancy $job): array => [
             'id' => $job->id,
@@ -46,5 +60,24 @@ class JobSearchController extends Controller
         ]);
 
         return response()->json($paginator);
+    }
+
+    public function show(JobVacancy $job): View
+    {
+        Gate::authorize('viewAny', JobVacancy::class);
+
+        $job = JobVacancy::query()
+            ->publiclyVisible()
+            ->with([
+                'company:id,name,description,industry,location,website,logo',
+                'category:id,name',
+            ])
+            ->findOrFail($job->id);
+
+        Gate::authorize('view', $job);
+
+        return view('jobs.show', [
+            'job' => $job,
+        ]);
     }
 }

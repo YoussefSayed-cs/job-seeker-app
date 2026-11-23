@@ -50,6 +50,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/jobs/search', [JobSearchController::class, 'index'])
         ->name('jobs.search');
+
+    Route::get('/jobs/{job}', [JobSearchController::class, 'show'])
+        ->name('jobs.show');
 });
 
 require __DIR__.'/settings.php';

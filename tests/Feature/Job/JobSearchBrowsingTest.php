@@ -495,3 +495,143 @@ test('filtered pagination preserves search query parameters', function () {
         ->assertJsonCount(2, 'data')
         ->assertJsonPath('current_page', 2);
 });
+
+test('guest is redirected from job details', function () {
+    $job = browsingJob(browsingOwner());
+
+    $this->get(route('jobs.show', $job))
+        ->assertRedirect(route('login'));
+});
+
+test('authenticated job seeker can view eligible job details', function () {
+    $owner = browsingOwner();
+    $job = browsingJob($owner, [
+        'title' => 'Senior Laravel Engineer',
+        'description' => 'Build reliable Laravel applications.',
+        'requirements' => 'PHP and Laravel.',
+        'required_skills' => 'Laravel, PHP',
+        'salary_min' => 15000,
+        'salary_max' => 25000,
+        'experience_level' => 'senior',
+        'application_deadline' => now()->toDateString(),
+    ]);
+
+    $owner->company->forceFill([
+        'description' => 'Approved company description.',
+        'website' => 'https://browsing.example',
+    ])->save();
+
+    $jobSeeker = User::factory()->create([
+        'role' => UserRole::JobSeeker,
+        'email_verified_at' => null,
+    ]);
+
+    $this->actingAs($jobSeeker)
+        ->get(route('jobs.show', $job))
+        ->assertOk()
+        ->assertSee('Senior Laravel Engineer')
+        ->assertSee('Build reliable Laravel applications.')
+        ->assertSee('PHP and Laravel.')
+        ->assertSee('Laravel, PHP')
+        ->assertSee('15000')
+        ->assertSee('25000')
+        ->assertSee('Senior')
+        ->assertSee('Approved company description.')
+        ->assertSee('https://browsing.example')
+        ->assertSee('Browsing Company');
+});
+
+test('company owner and admin cannot access job details', function () {
+    $job = browsingJob(browsingOwner());
+
+    $owner = $job->company->owner;
+    $this->actingAs($owner)
+        ->get(route('jobs.show', $job))
+        ->assertForbidden();
+
+    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $this->actingAs($admin)
+        ->get(route('jobs.show', $job))
+        ->assertForbidden();
+});
+
+test('closed archived expired and inactive company jobs are not accessible by direct url', function (array $attributes) {
+    $owner = browsingOwner(
+        $attributes['company_status'] ?? RegistrationStatus::Approved,
+        $attributes['owner_status'] ?? AccountStatus::Active,
+    );
+
+    $job = browsingJob($owner, $attributes['job'] ?? []);
+
+    $this->actingAs(User::factory()->create(['role' => UserRole::JobSeeker]))
+        ->get(route('jobs.show', $job))
+        ->assertNotFound();
+})->with([
+    'closed' => [[
+        'job' => ['status' => JobStatus::Closed],
+    ]],
+    'archived' => [[
+        'job' => [
+            'status' => JobStatus::Archived,
+            'archived_at' => now(),
+        ],
+    ]],
+    'expired' => [[
+        'job' => ['application_deadline' => now()->subDay()->toDateString()],
+    ]],
+    'pending company' => [[
+        'company_status' => RegistrationStatus::PendingApproval,
+    ]],
+    'rejected company' => [[
+        'company_status' => RegistrationStatus::Rejected,
+    ]],
+    'suspended owner' => [[
+        'owner_status' => AccountStatus::Suspended,
+    ]],
+    'deactivated owner' => [[
+        'owner_status' => AccountStatus::Deactivated,
+    ]],
+]);
+
+test('reactivating owner restores an eligible job detail', function () {
+    $owner = browsingOwner(ownerStatus: AccountStatus::Suspended);
+    $job = browsingJob($owner);
+
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+
+    $this->actingAs($jobSeeker)
+        ->get(route('jobs.show', $job))
+        ->assertNotFound();
+
+    $owner->forceFill(['status' => AccountStatus::Active])->save();
+
+    $this->actingAs($jobSeeker)
+        ->get(route('jobs.show', $job))
+        ->assertOk();
+});
+
+test('nullable job and company fields render safely', function () {
+    $owner = browsingOwner();
+    $owner->company->forceFill([
+        'description' => null,
+        'website' => null,
+        'logo' => null,
+    ])->save();
+
+    $job = browsingJob($owner, [
+        'required_skills' => null,
+        'salary_min' => null,
+        'salary_max' => null,
+        'experience_level' => null,
+        'application_deadline' => null,
+    ]);
+
+    $this->actingAs(User::factory()->create(['role' => UserRole::JobSeeker]))
+        ->get(route('jobs.show', $job))
+        ->assertOk()
+        ->assertSee('Browsing Company')
+        ->assertDontSee('Required skills')
+        ->assertDontSee('Salary range')
+        ->assertDontSee('Experience level')
+        ->assertDontSee('Application deadline');
+});
