@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\AccountReactivationController;
 use App\Http\Controllers\CompanyOwnerRegistrationController;
+use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\RejectedCompanyRegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,13 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/company-registration/rejected', [RejectedCompanyRegistrationController::class, 'update'])
         ->middleware('throttle:5,1')
         ->name('company-registration.rejected.update');
+
+    Route::get('/company-profile', [CompanyProfileController::class, 'show'])
+        ->name('company-profile.show');
+
+    Route::patch('/company-profile', [CompanyProfileController::class, 'update'])
+        ->middleware('throttle:10,1')
+        ->name('company-profile.update');
 });
 
 require __DIR__.'/settings.php';
