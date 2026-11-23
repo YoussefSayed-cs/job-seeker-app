@@ -1,6 +1,8 @@
 <?php
 
 use App\Livewire\Settings\Profile;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Shagalni\Shared\Enums\AccountStatus;
 use Shagalni\Shared\Enums\UserRole;
@@ -31,6 +33,25 @@ test('profile information can be updated', function () {
     expect($user->email)->toEqual('test@example.com');
     expect($user->phone)->toEqual('01098765432');
     expect($user->email_verified_at)->toBeNull();
+});
+
+test('changing email sends a verification link to the new address', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Livewire::test(Profile::class)
+        ->set('full_name', $user->full_name)
+        ->set('email', 'updated@example.com')
+        ->set('phone', $user->phone)
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    expect($user->fresh()->email_verified_at)->toBeNull();
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 test('email is stored in lowercase so the user can still log in', function () {

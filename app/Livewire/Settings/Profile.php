@@ -46,12 +46,17 @@ class Profile extends Component
         $validated = $this->validate($this->profileRules((string) $user->getKey()));
 
         $user->fill($validated);
+        $emailChanged = $user->isDirty('email');
 
-        if ($user->isDirty('email')) {
+        if ($emailChanged) {
             $user->email_verified_at = null;
         }
 
         $user->save();
+
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
