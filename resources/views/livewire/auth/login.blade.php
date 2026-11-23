@@ -54,5 +54,11 @@
             <span>{{ __('Don\'t have an account?') }}</span>
             <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
         </div>
+
+        <div class="text-center text-sm">
+            <flux:link :href="route('account-reactivation.create')" wire:navigate>
+                {{ __('Reactivate a deactivated account') }}
+            </flux:link>
+        </div>
     </div>
 </x-layouts::auth>

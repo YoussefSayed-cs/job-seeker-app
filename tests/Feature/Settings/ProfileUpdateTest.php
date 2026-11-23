@@ -258,15 +258,18 @@ test('profile updates cannot change protected account fields', function () {
         ->and($updatedUser->anonymized_at)->toBeNull();
 });
 
-test('account deletion endpoint is disabled and never deletes the user', function () {
+test('account deletion requires password confirmation and never deletes the user', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user);
 
     Livewire::test('settings.delete-user-form')
+        ->set('password', 'incorrect')
         ->call('deleteUser')
-        ->assertForbidden();
+        ->assertHasErrors(['password']);
 
     expect($user->fresh())->not->toBeNull()
+        ->and($user->fresh()->status)->toBe(AccountStatus::Active)
+        ->and($user->fresh()->deletion_requested_at)->toBeNull()
         ->and(auth()->check())->toBeTrue();
 });

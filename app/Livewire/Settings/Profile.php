@@ -3,6 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Concerns\ProfileValidationRules;
+use App\Services\AccountLifecycleService;
 use Flux\Flux;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Auth;
@@ -147,6 +148,6 @@ class Profile extends Component
     {
         $user = Auth::user();
 
-        return ! $user instanceof MustVerifyEmail || $user->hasVerifiedEmail();
+        return app(AccountLifecycleService::class)->canManageFromJobSeekerPortal($user);
     }
 }

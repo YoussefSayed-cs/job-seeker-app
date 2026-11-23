@@ -102,7 +102,11 @@
         @endif
 
         @if ($this->showDeleteUser)
-            <livewire:settings.delete-user-form />
+            <section class="mt-10 space-y-6 border-t border-zinc-200 pt-8 dark:border-zinc-700">
+                <flux:heading>{{ __('Account management') }}</flux:heading>
+                <livewire:settings.deactivate-account-form />
+                <livewire:settings.delete-user-form />
+            </section>
         @endif
     </x-settings.layout>
 </section>
