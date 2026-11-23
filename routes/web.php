@@ -2,11 +2,16 @@
 
 use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\AccountReactivationController;
+use App\Http\Controllers\CompanyOwnerRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
 Route::middleware('guest')->group(function () {
+    Route::post('/company-owner/register', [CompanyOwnerRegistrationController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('company-owner.register.store');
+
     Route::get('/account-reactivation', [AccountReactivationController::class, 'create'])
         ->name('account-reactivation.create');
 
