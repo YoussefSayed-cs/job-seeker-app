@@ -53,20 +53,21 @@ class SavedJobsController extends Controller
 
         Gate::authorize('view', $job);
 
-        if (! $job->isAcceptingApplications()) {
-            throw ValidationException::withMessages([
-                'job_id' => 'This job is not available for bookmarking.',
-            ]);
-        }
-
         $existing = $user->savedJobs()
+            ->with(['jobVacancy.company.owner', 'jobVacancy.category:id,name'])
             ->where('job_vacancy_id', $job->id)
             ->first();
 
         if ($existing !== null) {
             return response()->json([
                 'message' => 'Job is already saved.',
-                'saved_job' => $this->savedJobPayload($existing->load('jobVacancy.company.owner', 'jobVacancy.category:id,name')),
+                'saved_job' => $this->savedJobPayload($existing),
+            ]);
+        }
+
+        if (! $job->isAcceptingApplications()) {
+            throw ValidationException::withMessages([
+                'job_id' => 'This job is not available for bookmarking.',
             ]);
         }
 

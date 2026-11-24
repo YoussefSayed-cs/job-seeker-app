@@ -105,6 +105,24 @@ test('duplicate saves are handled gracefully', function () {
     expect(SavedJob::where('user_id', $jobSeeker->id)->where('job_vacancy_id', $job->id)->count())->toBe(1);
 });
 
+test('an existing bookmark is returned when the job becomes unavailable', function () {
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+    $owner = savedJobOwner();
+    $job = savedJobJob($owner);
+    savedJobFor($jobSeeker, $job);
+
+    $job->forceFill(['status' => JobStatus::Closed])->save();
+
+    $this->actingAs($jobSeeker)
+        ->postJson(route('saved-jobs.store'), ['job_id' => $job->id])
+        ->assertOk()
+        ->assertJsonPath('message', 'Job is already saved.')
+        ->assertJsonPath('saved_job.available', false)
+        ->assertJsonPath('saved_job.unavailable_reason', 'closed');
+
+    expect(SavedJob::where('user_id', $jobSeeker->id)->where('job_vacancy_id', $job->id)->count())->toBe(1);
+});
+
 test('invalid and missing job uuids are rejected', function () {
     $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
 
@@ -185,6 +203,21 @@ test('unavailable saved jobs remain visible with the correct reason', function (
         ->assertJsonFragment(['available' => false, 'unavailable_reason' => 'closed'])
         ->assertJsonFragment(['available' => false, 'unavailable_reason' => 'expired'])
         ->assertJsonFragment(['available' => false, 'unavailable_reason' => 'company_inactive']);
+});
+
+test('a saved job remains visible when the company owner becomes inactive', function () {
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+    $owner = savedJobOwner();
+    $job = savedJobJob($owner);
+    savedJobFor($jobSeeker, $job);
+
+    $owner->forceFill(['status' => AccountStatus::Suspended])->save();
+
+    $this->actingAs($jobSeeker)
+        ->getJson(route('saved-jobs.index'))
+        ->assertOk()
+        ->assertJsonFragment(['available' => false, 'unavailable_reason' => 'owner_inactive'])
+        ->assertJsonFragment(['title' => 'Laravel Developer']);
 });
 
 test('a user can remove their own bookmark without deleting the job', function () {
