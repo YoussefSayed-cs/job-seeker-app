@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Policies\CompanyPolicy;
 use App\Policies\JobSearchPolicy;
+use App\Policies\SavedJobPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Shagalni\Shared\Models\Company;
 use Shagalni\Shared\Models\JobVacancy;
+use Shagalni\Shared\Models\SavedJob;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Company::class, CompanyPolicy::class);
         Gate::policy(JobVacancy::class, JobSearchPolicy::class);
+        Gate::policy(SavedJob::class, SavedJobPolicy::class);
         $this->configureDefaults();
     }
 
@@ -40,9 +43,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
-        DB::prohibitDestructiveCommands(
-            app()->isProduction(),
-        );
+        DB::prohibitDestructiveCommands(app()->isProduction(), );
 
         Password::defaults(fn (): ?Password => app()->isProduction()
             ? Password::min(12)

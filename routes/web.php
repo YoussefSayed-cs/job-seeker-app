@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyOwnerRegistrationController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\JobSearchController;
 use App\Http\Controllers\RejectedCompanyRegistrationController;
+use App\Http\Controllers\SavedJobsController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -53,6 +54,18 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/jobs/{job}', [JobSearchController::class, 'show'])
         ->name('jobs.show');
+
+    Route::get('/saved-jobs', [SavedJobsController::class, 'index'])
+        ->name('saved-jobs.index');
+
+    Route::post('/saved-jobs', [SavedJobsController::class, 'store'])
+        ->name('saved-jobs.store');
+
+    Route::get('/saved-jobs/{savedJob}', [SavedJobsController::class, 'show'])
+        ->name('saved-jobs.show');
+
+    Route::delete('/saved-jobs/{savedJob}', [SavedJobsController::class, 'destroy'])
+        ->name('saved-jobs.destroy');
 });
 
 require __DIR__.'/settings.php';
