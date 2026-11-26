@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\AccountReactivationController;
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\CompanyOwnerRegistrationController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\JobSearchController;
@@ -59,6 +60,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/jobs/{job}', [JobSearchController::class, 'show'])
         ->name('jobs.show');
+
+    Route::post('/jobs/{job}/apply', [ApplicationController::class, 'store'])
+        ->name('jobs.apply');
 
     Route::get('/saved-jobs', [SavedJobsController::class, 'index'])
         ->name('saved-jobs.index');

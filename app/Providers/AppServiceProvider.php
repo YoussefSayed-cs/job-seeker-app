@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Policies\ApplicationPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\JobSearchPolicy;
 use App\Policies\ResumePolicy;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Shagalni\Shared\Models\Application;
 use Shagalni\Shared\Models\Company;
 use Shagalni\Shared\Models\JobVacancy;
 use Shagalni\Shared\Models\Resume;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Application::class, ApplicationPolicy::class);
         Gate::policy(Company::class, CompanyPolicy::class);
         Gate::policy(JobVacancy::class, JobSearchPolicy::class);
         Gate::policy(Resume::class, ResumePolicy::class);

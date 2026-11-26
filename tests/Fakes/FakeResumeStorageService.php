@@ -3,7 +3,9 @@
 namespace Tests\Fakes;
 
 use App\Services\ResumeStorageService;
+use Closure;
 use Illuminate\Http\UploadedFile;
+use Throwable;
 
 final class FakeResumeStorageService extends ResumeStorageService
 {
@@ -13,8 +15,15 @@ final class FakeResumeStorageService extends ResumeStorageService
     /** @var list<string> */
     public array $deleted = [];
 
+    /** @var list<array{source: string, folder: string, name: string}> */
+    public array $copies = [];
+
     /** @var list<array{public_id: string, seconds: int}> */
     public array $signedUrls = [];
+
+    public ?Throwable $copyFailure = null;
+
+    public ?Closure $afterCopy = null;
 
     public function upload(UploadedFile $file, string $folder, string $name): string
     {
@@ -28,6 +37,22 @@ final class FakeResumeStorageService extends ResumeStorageService
         $this->signedUrls[] = ['public_id' => $publicId, 'seconds' => $seconds];
 
         return 'https://cloudinary.test/'.$publicId;
+    }
+
+    public function copy(string $sourcePublicId, string $folder, string $name): string
+    {
+        if ($this->copyFailure !== null) {
+            throw $this->copyFailure;
+        }
+
+        $this->copies[] = [
+            'source' => $sourcePublicId,
+            'folder' => $folder,
+            'name' => $name,
+        ];
+        $this->afterCopy?->__invoke($sourcePublicId, $folder, $name);
+
+        return $folder.'/'.$name.'.pdf';
     }
 
     public function delete(string $publicId): void

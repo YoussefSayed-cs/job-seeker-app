@@ -114,6 +114,31 @@
                     <div class="mt-2 whitespace-pre-line">{{ $job->requirements }}</div>
                 </div>
             </section>
+
+            <section class="border-t border-zinc-200 pt-5 dark:border-zinc-700">
+                @if ($applicationIneligibilityReason === null)
+                    <form
+                        method="POST"
+                        action="{{ route('jobs.apply', $job) }}"
+                        onsubmit="this.querySelector('button[type=submit]').disabled = true"
+                    >
+                        @csrf
+                        <button
+                            type="submit"
+                            class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                        >
+                            {{ __('Apply for this job') }}
+                        </button>
+                    </form>
+                @elseif ($applicationIneligibilityReason === 'Upload a resume before applying.')
+                    <p>
+                        {{ $applicationIneligibilityReason }}
+                        <a class="underline" href="{{ route('resume.show') }}">{{ __('Upload your resume') }}</a>
+                    </p>
+                @else
+                    <p>{{ $applicationIneligibilityReason }}</p>
+                @endif
+            </section>
         </article>
     </div>
 </x-layouts::app>
