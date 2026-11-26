@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyOwnerRegistrationController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\JobSearchController;
 use App\Http\Controllers\RejectedCompanyRegistrationController;
+use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\SavedJobsController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,10 @@ Route::get('/account-deletion/{user}/cancel', [AccountDeletionController::class,
 
 Route::middleware(['auth'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
+
+    Route::get('/resume', [ResumeController::class, 'show'])->name('resume.show');
+    Route::post('/resume', [ResumeController::class, 'store'])->name('resume.store');
+    Route::get('/resume/download', [ResumeController::class, 'download'])->name('resume.download');
 
     Route::get('/company-registration/rejected', [RejectedCompanyRegistrationController::class, 'show'])
         ->name('company-registration.rejected.show');

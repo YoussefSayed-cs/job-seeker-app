@@ -15,6 +15,11 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    @if (auth()->user()?->role === \Shagalni\Shared\Enums\UserRole::JobSeeker)
+                        <flux:sidebar.item icon="document-text" :href="route('resume.show')" :current="request()->routeIs('resume.*')" wire:navigate>
+                            {{ __('My Resume') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
