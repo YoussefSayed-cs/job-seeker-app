@@ -1,3 +1,6 @@
+@php
+    $unreadNotifications = auth()->user()->unreadNotifications()->count();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
@@ -12,6 +15,20 @@
             <flux:navbar class="-mb-px max-lg:hidden">
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
+                </flux:navbar.item>
+                @if (auth()->user()?->role === \Shagalni\Shared\Enums\UserRole::JobSeeker)
+                    <flux:navbar.item icon="magnifying-glass" :href="route('jobs.search')" :current="request()->routeIs('jobs.*')" wire:navigate>
+                        {{ __('Jobs') }}
+                    </flux:navbar.item>
+                    <flux:navbar.item icon="bookmark" :href="route('saved-jobs.index')" :current="request()->routeIs('saved-jobs.*')" wire:navigate>
+                        {{ __('Saved Jobs') }}
+                    </flux:navbar.item>
+                @endif
+                <flux:navbar.item icon="bell" :href="route('notifications.index')" :current="request()->routeIs('notifications.*')" wire:navigate>
+                    {{ __('Notifications') }}
+                    @if ($unreadNotifications > 0)
+                        <span class="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">{{ $unreadNotifications }}</span>
+                    @endif
                 </flux:navbar.item>
             </flux:navbar>
 
@@ -55,6 +72,20 @@
                 <flux:sidebar.group :heading="__('Platform')">
                     <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard')  }}
+                    </flux:sidebar.item>
+                    @if (auth()->user()?->role === \Shagalni\Shared\Enums\UserRole::JobSeeker)
+                        <flux:sidebar.item icon="magnifying-glass" :href="route('jobs.search')" :current="request()->routeIs('jobs.*')" wire:navigate>
+                            {{ __('Browse Jobs') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="bookmark" :href="route('saved-jobs.index')" :current="request()->routeIs('saved-jobs.*')" wire:navigate>
+                            {{ __('Saved Jobs') }}
+                        </flux:sidebar.item>
+                    @endif
+                    <flux:sidebar.item icon="bell" :href="route('notifications.index')" :current="request()->routeIs('notifications.*')" wire:navigate>
+                        {{ __('Notifications') }}
+                        @if ($unreadNotifications > 0)
+                            <span class="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">{{ $unreadNotifications }}</span>
+                        @endif
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>

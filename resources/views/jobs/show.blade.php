@@ -116,28 +116,43 @@
             </section>
 
             <section class="border-t border-zinc-200 pt-5 dark:border-zinc-700">
-                @if ($applicationIneligibilityReason === null)
-                    <form
-                        method="POST"
-                        action="{{ route('jobs.apply', $job) }}"
-                        onsubmit="this.querySelector('button[type=submit]').disabled = true"
-                    >
-                        @csrf
-                        <button
-                            type="submit"
-                            class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                <div class="flex flex-wrap items-center gap-3">
+                    @if ($applicationIneligibilityReason === null)
+                        <form
+                            method="POST"
+                            action="{{ route('jobs.apply', $job) }}"
+                            onsubmit="this.querySelector('button[type=submit]').disabled = true"
                         >
-                            {{ __('Apply for this job') }}
-                        </button>
-                    </form>
-                @elseif ($applicationIneligibilityReason === 'Upload a resume before applying.')
-                    <p>
-                        {{ $applicationIneligibilityReason }}
-                        <a class="underline" href="{{ route('resume.show') }}">{{ __('Upload your resume') }}</a>
-                    </p>
-                @else
-                    <p>{{ $applicationIneligibilityReason }}</p>
-                @endif
+                            @csrf
+                            <flux:button type="submit" variant="primary">
+                                {{ __('Apply for this job') }}
+                            </flux:button>
+                        </form>
+                    @elseif ($applicationIneligibilityReason === 'Upload a resume before applying.')
+                        <flux:text>
+                            {{ $applicationIneligibilityReason }}
+                            <flux:link :href="route('resume.show')" wire:navigate>{{ __('Upload your resume') }}</flux:link>
+                        </flux:text>
+                    @else
+                        <flux:text>{{ $applicationIneligibilityReason }}</flux:text>
+                    @endif
+
+                    @if ($job->isAcceptingApplications())
+                        @if ($isSaved)
+                            <flux:button :href="route('saved-jobs.index')" variant="outline" wire:navigate>
+                                {{ __('View saved jobs') }}
+                            </flux:button>
+                        @else
+                            <form method="POST" action="{{ route('saved-jobs.store') }}">
+                                @csrf
+                                <input type="hidden" name="job_id" value="{{ $job->id }}">
+                                <flux:button type="submit" variant="outline">
+                                    {{ __('Save for later') }}
+                                </flux:button>
+                            </form>
+                        @endif
+                    @endif
+                </div>
             </section>
         </article>
     </div>

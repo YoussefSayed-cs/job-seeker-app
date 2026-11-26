@@ -90,6 +90,7 @@ class JobSearchController extends Controller
         return view('jobs.show', [
             'job' => $job,
             'applicationIneligibilityReason' => $submission->ineligibilityReason($request->user(), $job),
+            'isSaved' => $request->user()->savedJobs()->where('job_vacancy_id', $job->id)->exists(),
         ]);
     }
 }

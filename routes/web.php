@@ -6,6 +6,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\CompanyOwnerRegistrationController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\JobSearchController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RejectedCompanyRegistrationController;
 use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\SavedJobsController;
@@ -84,6 +85,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/saved-jobs/{savedJob}', [SavedJobsController::class, 'destroy'])
         ->name('saved-jobs.destroy');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.read-all');
+
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
 });
 
 require __DIR__.'/settings.php';

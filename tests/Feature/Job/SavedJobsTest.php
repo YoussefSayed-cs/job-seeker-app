@@ -288,3 +288,45 @@ test('an unavailable saved job has read only details and cannot be applied to', 
 
     expect($job->fresh()->isAcceptingApplications())->toBeFalse();
 });
+
+test('job seekers can save and remove jobs through the portal pages', function () {
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+    $job = savedJobJob(savedJobOwner(), ['title' => 'Portal Saved Job']);
+
+    $this->actingAs($jobSeeker)
+        ->get(route('jobs.show', $job))
+        ->assertOk()
+        ->assertSee('Save for later');
+
+    $this->post(route('saved-jobs.store'), ['job_id' => $job->id])
+        ->assertRedirect(route('saved-jobs.index'));
+
+    $savedJob = SavedJob::where('user_id', $jobSeeker->id)
+        ->where('job_vacancy_id', $job->id)
+        ->firstOrFail();
+
+    $this->get(route('saved-jobs.index'))
+        ->assertOk()
+        ->assertSee('Portal Saved Job')
+        ->assertSee('Remove');
+
+    $this->delete(route('saved-jobs.destroy', $savedJob))
+        ->assertRedirect(route('saved-jobs.index'));
+
+    expect(SavedJob::whereKey($savedJob->id)->exists())->toBeFalse();
+});
+
+test('saved jobs page explains when a saved job becomes unavailable', function () {
+    $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
+    $job = savedJobJob(savedJobOwner(), [
+        'status' => JobStatus::Closed,
+        'title' => 'Closed Portal Job',
+    ]);
+    savedJobFor($jobSeeker, $job);
+
+    $this->actingAs($jobSeeker)
+        ->get(route('saved-jobs.index'))
+        ->assertOk()
+        ->assertSee('Closed Portal Job')
+        ->assertSee('This job is closed.');
+});
