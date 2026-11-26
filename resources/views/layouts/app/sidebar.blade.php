@@ -16,6 +16,9 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
                     @if (auth()->user()?->role === \Shagalni\Shared\Enums\UserRole::JobSeeker)
+                        <flux:sidebar.item icon="briefcase" :href="route('applications.index')" :current="request()->routeIs('applications.*')" wire:navigate>
+                            {{ __('My Applications') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="document-text" :href="route('resume.show')" :current="request()->routeIs('resume.*')" wire:navigate>
                             {{ __('My Resume') }}
                         </flux:sidebar.item>

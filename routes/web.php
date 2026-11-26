@@ -64,6 +64,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/jobs/{job}/apply', [ApplicationController::class, 'store'])
         ->name('jobs.apply');
 
+    Route::get('/applications', [ApplicationController::class, 'index'])
+        ->name('applications.index');
+
+    Route::get('/applications/{application}', [ApplicationController::class, 'show'])
+        ->name('applications.show');
+
+    Route::post('/applications/{application}/withdraw', [ApplicationController::class, 'withdraw'])
+        ->name('applications.withdraw');
+
     Route::get('/saved-jobs', [SavedJobsController::class, 'index'])
         ->name('saved-jobs.index');
 
