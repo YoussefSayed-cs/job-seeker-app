@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Ai\GeminiResumeAnalyzer;
+use App\Ai\PdfDocxDocumentParser;
 use App\Policies\ApplicationPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\JobSearchPolicy;
@@ -13,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Shagalni\Shared\Ai\DocumentParser;
+use Shagalni\Shared\Ai\ResumeAnalyzer;
 use Shagalni\Shared\Models\Application;
 use Shagalni\Shared\Models\Company;
 use Shagalni\Shared\Models\JobVacancy;
@@ -26,7 +30,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(DocumentParser::class, PdfDocxDocumentParser::class);
+        $this->app->bind(ResumeAnalyzer::class, GeminiResumeAnalyzer::class);
     }
 
     /**
