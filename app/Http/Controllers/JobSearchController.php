@@ -4,13 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\JobSearchRequest;
 use App\Services\ApplicationSubmissionService;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
-use Shagalni\Shared\Enums\AccountStatus;
-use Shagalni\Shared\Enums\RegistrationStatus;
 use Shagalni\Shared\Models\JobCategory;
 use Shagalni\Shared\Models\JobVacancy;
 
@@ -72,12 +69,7 @@ class JobSearchController extends Controller
         Gate::authorize('viewAny', JobVacancy::class);
 
         $job = JobVacancy::query()
-            ->whereHas('company', function (Builder $company): void {
-                $company->where('registration_status', RegistrationStatus::Approved->value)
-                    ->whereHas('owner', function (Builder $owner): void {
-                        $owner->where('status', AccountStatus::Active->value);
-                    });
-            })
+            ->publiclyVisible()
             ->with([
                 'company:id,owner_id,name,description,industry,location,website,logo,registration_status',
                 'company.owner:id,status',

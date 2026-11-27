@@ -555,7 +555,7 @@ test('company owner and admin cannot access job details', function () {
         ->assertForbidden();
 });
 
-test('job detail displays availability for closed archived and expired jobs', function (array $attributes) {
+test('closed archived and expired jobs are hidden from job details', function (array $attributes) {
     $owner = browsingOwner(
         $attributes['company_status'] ?? RegistrationStatus::Approved,
         $attributes['owner_status'] ?? AccountStatus::Active,
@@ -564,41 +564,22 @@ test('job detail displays availability for closed archived and expired jobs', fu
     $job = browsingJob($owner, $attributes['job'] ?? []);
 
     $jobSeeker = User::factory()->create(['role' => UserRole::JobSeeker]);
-    $jobSeeker->resume()->create([
-        'file_path' => 'resumes/'.$jobSeeker->id.'/current.pdf',
-        'original_name' => 'Current resume.pdf',
-        'file_size' => 100,
-        'file_type' => 'pdf',
-    ]);
 
-    $response = $this->actingAs($jobSeeker)
-        ->get(route('jobs.show', $job));
-
-    if (($attributes['should_be_visible'] ?? true) === false) {
-        $response->assertNotFound();
-
-        return;
-    }
-
-    $response
-        ->assertOk()
-        ->assertSee($attributes['reason'])
-        ->assertDontSee('Apply for this job');
+    $this->actingAs($jobSeeker)
+        ->get(route('jobs.show', $job))
+        ->assertNotFound();
 })->with([
     'closed' => [[
         'job' => ['status' => JobStatus::Closed],
-        'reason' => 'This job is closed.',
     ]],
     'archived' => [[
         'job' => [
             'status' => JobStatus::Archived,
             'archived_at' => now(),
         ],
-        'reason' => 'This job is archived.',
     ]],
     'expired' => [[
         'job' => ['application_deadline' => now()->subDay()->toDateString()],
-        'reason' => 'The application deadline has passed.',
     ]],
     'pending company' => [[
         'company_status' => RegistrationStatus::PendingApproval,
